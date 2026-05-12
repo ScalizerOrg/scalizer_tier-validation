@@ -2,8 +2,8 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 import logging
 
-from odoo import _, api, fields, models
-from odoo.exceptions import AccessError, UserError
+from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +28,6 @@ class AccountMove(models.Model):
 
     invoice_payment_review_state = fields.Selection(
         selection=SELECTION,
-        string='Invoice Payment Review State',
         compute='_compute_invoice_payment_review_state',
         inverse='_inverse_invoice_payment_review_state',
         store=True,
@@ -52,7 +51,6 @@ class AccountMove(models.Model):
     )
 
     payment_locked = fields.Boolean(
-        string='Payment Locked',
         compute='_compute_payment_locked',
         store=True,
         readonly=True,
@@ -101,7 +99,9 @@ class AccountMove(models.Model):
                 auto_val = 'to_review'
             move.invoice_payment_review_state_auto = auto_val
             if move.invoice_payment_review_state_manual:
-                move.invoice_payment_review_state = move.invoice_payment_review_state_manual
+                move.invoice_payment_review_state = (
+                    move.invoice_payment_review_state_manual
+                )
             else:
                 move.invoice_payment_review_state = auto_val
 
@@ -130,14 +130,15 @@ class AccountMove(models.Model):
 
     def action_force_register_payment(self):
         """
-           Prevent payment registration when the vendor bill is not approved for payment.
+        Prevent payment registration when the vendor bill is not approved for payment.
 
-           If `payment_locked` is True, block the action with a clear error message.
-           Otherwise, allow payment registration and bypass tier checks via context.
-       """
+        If `payment_locked` is True, block the action with a clear error message.
+        Otherwise, allow payment registration and bypass tier checks via context.
+        """
         if any(m.payment_locked for m in self):
-            raise UserError(
-                _('Payment is not allowed: this vendor bill is not approved for payment.'))
+            raise UserError(self.env._(
+                'Payment is not allowed: this vendor bill is not approved for payment.'
+            ))
         return super(AccountMove, self.with_context(
             skip_validation_check=True)).action_force_register_payment()
 
@@ -149,7 +150,7 @@ class AccountMove(models.Model):
         tier workflow again, so we clear `invoice_payment_review_state_manual`.
         """
 
-        res = super(AccountMove, self).request_validation()
+        res = super().request_validation()
         for move in self:
             if move.invoice_payment_review_state_manual:
                 move.invoice_payment_review_state_manual = False
@@ -164,7 +165,7 @@ class AccountMove(models.Model):
         tier workflow again, so we clear `invoice_payment_review_state_manual`.
         """
 
-        res = super(AccountMove, self).restart_validation()
+        res = super().restart_validation()
         for move in self:
             if move.invoice_payment_review_state_manual:
                 move.invoice_payment_review_state_manual = False
