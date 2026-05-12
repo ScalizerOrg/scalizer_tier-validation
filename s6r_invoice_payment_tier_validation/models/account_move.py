@@ -206,10 +206,15 @@ class AccountMove(models.Model):
 
     def _payment_validation_required(self):
         self.ensure_one()
-        return (
-            not self.is_intragroup_invoice
-            and self._is_vendor_bill_posted()
-        )
+        if self.is_intragroup_invoice or not self._is_vendor_bill_posted():
+            return False
+        tiers = self.env['tier.definition'].with_context(active_test=True).search([
+            ('model', '=', self._name),
+            ('company_id', 'in', [False] + self._get_company().ids),
+        ])
+        if not tiers:
+            return False
+        return any(self.evaluate_tier(tier) for tier in tiers)
 
     def _is_vendor_bill_posted(self):
         self.ensure_one()
