@@ -81,7 +81,7 @@ class AccountMove(models.Model):
             'waiting': 'in_review',
         }
         for move in self:
-            if move.move_type not in ('in_invoice', 'in_refund'):
+            if not move._is_vendor_bill():
                 move.invoice_payment_review_state = False
                 move.invoice_payment_review_state_auto = False
                 continue
@@ -219,7 +219,11 @@ class AccountMove(models.Model):
 
     def _is_vendor_bill_posted(self):
         self.ensure_one()
-        return self.state == 'posted' and self.move_type in ('in_invoice', 'in_refund')
+        return self.state == 'posted' and self._is_vendor_bill()
+
+    def _is_vendor_bill(self):
+        self.ensure_one()
+        return self.move_type in ('in_invoice', 'in_refund')
 
     def _get_under_validation_exceptions(self):
         return (super()._get_under_validation_exceptions() + [
