@@ -82,7 +82,7 @@ class TierReview(models.Model):
                                    "from_user": from_names,
                                    "to_user": to_names,
                                }
-                        record.message_post(body=body)
+                        record.sudo().message_post(body=body)
         return res
 
     def _get_reviewers(self):
