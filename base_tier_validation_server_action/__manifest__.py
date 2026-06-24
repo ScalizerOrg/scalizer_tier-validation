@@ -5,7 +5,7 @@
     "summary": "Add option to call server action when a tier is validated",
     "version": "19.0.1.0.0",
     "category": "Tools",
-    "website": "https://github.com/OCA/server-ux",
+    "website": "https://github.com/OCA/tier-validation",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "application": False,

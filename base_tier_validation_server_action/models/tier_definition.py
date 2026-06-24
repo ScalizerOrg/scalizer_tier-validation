@@ -4,6 +4,7 @@ import logging
 from ast import literal_eval
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 
 _logger = logging.getLogger(__name__)
 
@@ -39,10 +40,8 @@ class TierDefinition(models.Model):
     @api.model
     def _cron_auto_tier_validation(self):
         reviews = self.env["tier.review"].search(
-            [
-                ("status", "in", ("waiting", "pending")),
-                ("definition_id.auto_validate", "=", True),
-            ]
+            Domain("status", "in", ("waiting", "pending"))
+            & Domain("definition_id.auto_validate", "=", True)
         )
         for review in reviews:
             doc = self._evaluate_review(review)
@@ -52,7 +51,7 @@ class TierDefinition(models.Model):
                 reviewer = review.reviewer_ids or self.env.user
                 if len(reviewer) > 1:
                     _logger.warning(
-                        f"Cannot auto tier validate {doc}: " "too many reviewers"
+                        f"Cannot auto tier validate {doc}: too many reviewers"
                     )
                     continue
                 review_doc = doc.with_user(reviewer)

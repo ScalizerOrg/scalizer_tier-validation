@@ -1,69 +1,36 @@
 # Copyright 2020 Ecosoft (http://ecosoft.co.th)
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
-
 from odoo.orm.model_classes import add_to_registry
-
-from odoo.tests import common
 from odoo.tests.common import tagged
+
+from odoo.addons.base_tier_validation.tests.common import CommonTierValidation
 
 
 @tagged("post_install", "-at_install")
-class TierTierValidation(common.TransactionCase):
+class TierTierValidation(CommonTierValidation):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-
         from .tier_validation_tester import TierValidationTester
 
         add_to_registry(cls.registry, TierValidationTester)
-        cls.registry._setup_models__(cls.env.cr, [TierValidationTester._name])
+        cls.registry._setup_models__(cls.env.cr, ["tier.validation.tester"])
         cls.registry.init_models(
-            cls.env.cr, [TierValidationTester._name], {"models_to_check": True}
+            cls.env.cr,
+            ["tier.validation.tester"],
+            {"models_to_check": True},
         )
 
-        cls.test_model = cls.env[TierValidationTester._name]
-        cls.tester_model = cls.env["ir.model"].search(
-            [("model", "=", "tier.validation.tester")]
-        )
-
-        # Access record:
-        cls.env["ir.model.access"].create(
+    def _setup_tier_definitions(self):
+        self.tier_def_obj.create(
             {
-                "name": "access.tester",
-                "model_id": cls.tester_model.id,
-                "perm_read": 1,
-                "perm_write": 1,
-                "perm_create": 1,
-                "perm_unlink": 1,
-            }
-        )
-
-        # Create users:
-        cls.group_system = cls.env.ref("base.group_system")
-        group_ids = cls.group_system.ids
-        cls.test_user_1 = cls.env["res.users"].create(
-            {"name": "John", "login": "test1", "group_ids": [(6, 0, group_ids)]}
-        )
-        cls.test_user_2 = cls.env["res.users"].create(
-            {"name": "Mike", "login": "test2"}
-        )
-        cls.test_user_3 = cls.env["res.users"].create(
-            {"name": "John Wick", "login": "test3", "group_ids": [(6, 0, group_ids)]}
-        )
-
-        # Create tier definitions:
-        cls.tier_def_obj = cls.env["tier.definition"]
-        cls.tier_def_obj.create(
-            {
-                "model_id": cls.tester_model.id,
+                "model_id": self.tester_model.id,
                 "review_type": "individual",
-                "reviewer_id": cls.test_user_1.id,
+                "reviewer_id": self.test_user_1.id,
                 "definition_domain": "[('test_field', '>', 1.0)]",
                 "sequence": 30,
             }
         )
-
-        cls.test_record = cls.test_model.create({"test_field": 2.5})
 
     def test_1_auto_validation(self):
         # Create new test record
@@ -91,13 +58,14 @@ class TierTierValidation(common.TransactionCase):
             }
         )
         # Request validation
-        test_record.with_user(self.test_user_2).request_validation()
+        reviews = test_record.with_user(self.test_user_2).request_validation()
+        reviews._update_review_status()
         record = test_record.with_user(self.test_user_1)
         record.invalidate_recordset()
         # Auto validate, 1st tier, not auto validated
         self.tier_def_obj._cron_auto_tier_validation()
         self.assertEqual(
-            record.review_ids.mapped("status"), ["waiting", "waiting", "waiting"]
+            record.review_ids.mapped("status"), ["pending", "waiting", "waiting"]
         )
         # Manual validate 2nd tier -> OK
         record.validate_tier()
@@ -128,14 +96,15 @@ class TierTierValidation(common.TransactionCase):
             {
                 "model_id": self.tester_model.id,
                 "review_type": "individual",
-                "reviewer_group_id": self.group_system.id,
+                "reviewer_group_id": self.test_group.id,
                 "sequence": 20,
                 "approve_sequence": True,
                 "auto_validate": True,
             }
         )
         # Request validation
-        test_record.with_user(self.test_user_2).request_validation()
+        reviews = test_record.with_user(self.test_user_2).request_validation()
+        reviews._update_review_status()
         record = test_record.with_user(self.test_user_1)
         record.invalidate_recordset()
         # Auto validate, 1st tier, not auto validated
@@ -144,7 +113,7 @@ class TierTierValidation(common.TransactionCase):
             level="WARNING",
         ):
             self.tier_def_obj._cron_auto_tier_validation()
-        self.assertEqual(record.review_ids.mapped("status"), ["waiting", "waiting"])
+        self.assertEqual(record.review_ids.mapped("status"), ["pending", "waiting"])
         # Manual validate 2nd tier -> OK
         record.validate_tier()
         self.assertEqual(record.review_ids.mapped("status"), ["approved", "pending"])
@@ -179,7 +148,8 @@ class TierTierValidation(common.TransactionCase):
             }
         )
         # Request validation
-        test_record.with_user(self.test_user_2).request_validation()
+        reviews = test_record.with_user(self.test_user_2).request_validation()
+        reviews._update_review_status()
         record = test_record.with_user(self.test_user_1)
         record.invalidate_recordset()
         record.validate_tier()
@@ -208,7 +178,8 @@ class TierTierValidation(common.TransactionCase):
             }
         )
         # Request rejection
-        test_record.with_user(self.test_user_2).request_validation()
+        reviews = test_record.with_user(self.test_user_2).request_validation()
+        reviews._update_review_status()
         record = test_record.with_user(self.test_user_1)
         record.invalidate_recordset()
         record.reject_tier()

@@ -1,11 +1,11 @@
-# Copyright 2025 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 {
     "name": "Base Tier Validation Forward",
     "summary": "Forward option for base tiers",
     "version": "19.0.1.0.0",
     "category": "Tools",
-    "website": "https://github.com/OCA/server-ux",
+    "website": "https://github.com/OCA/tier-validation",
     "author": "Ecosoft,Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "depends": ["base_tier_validation"],
