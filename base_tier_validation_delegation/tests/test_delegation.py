@@ -13,47 +13,34 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestTierValidationDelegation(CommonTierValidation):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.user_delegator = cls.test_user_1
-        cls.user_replacer_b = cls.env["res.users"].create(
+    def setUp(self):
+        super().setUp()
+        self.user_delegator = self.test_user_1
+        self.user_replacer_b = self.env["res.users"].create(
             {"name": "User B (Replacer)", "login": "user_b", "email": "b@test.com"}
         )
-        cls.user_replacer_c = cls.env["res.users"].create(
+        self.user_replacer_c = self.env["res.users"].create(
             {"name": "User C (Final)", "login": "user_c", "email": "c@test.com"}
         )
-        cls.admin_user = cls.env["res.users"].create(
+        self.admin_user = self.env["res.users"].create(
             {"name": "Delegation Admin", "login": "deleg_admin", "email": "da@test.com"}
         )
-        cls.delegation_admin_group = cls.env.ref(
+        self.delegation_admin_group = self.env.ref(
             "base_tier_validation_delegation.group_delegation_administrator"
         )
-        cls.admin_user.write({"group_ids": [(4, cls.delegation_admin_group.id)]})
+        self.admin_user.write({"group_ids": [(4, self.delegation_admin_group.id)]})
 
-        cls.test_group = cls.env["res.groups"].create({"name": "Test Review Group"})
-        cls.test_user_1.write({"group_ids": [(4, cls.test_group.id)]})
-        cls.test_user_2.write({"group_ids": [(4, cls.test_group.id)]})
-        cls.tier_def = cls.env["tier.definition"].create(
+        self.test_group = self.env["res.groups"].create({"name": "Test Review Group"})
+        self.test_user_1.write({"group_ids": [(4, self.test_group.id)]})
+        self.test_user_2.write({"group_ids": [(4, self.test_group.id)]})
+        self.tier_def = self.env["tier.definition"].create(
             {
-                "model_id": cls.tester_model.id,
+                "model_id": self.tester_model.id,
                 "approve_sequence": False,
                 "review_type": "individual",
-                "reviewer_id": cls.user_delegator.id,
+                "reviewer_id": self.user_delegator.id,
                 "definition_domain": "[('test_field', '>', 1.0)]",
             }
-        )
-
-    def tearDown(self):
-        super().tearDown()
-        users_to_reset = (
-            self.user_delegator
-            | self.user_replacer_b
-            | self.user_replacer_c
-            | self.test_user_2
-        )
-        users_to_reset.write(
-            {"on_holiday": False, "validation_replacer_id": False, "active": True}
         )
 
 
