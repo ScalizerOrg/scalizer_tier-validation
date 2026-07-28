@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 {
     "name": "Scalizer Invoice Payment Tier Validation",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.0.3",
     "author": "Scalizer",
     "website": "https://www.scalizer.fr",
     "category": "Accounting/Accounting",
@@ -20,9 +20,7 @@ override the review state when needed.
     ],
     "data": [
         "security/security.xml",
-        "data/tier_definition.xml",
         "views/account_move_views.xml",
-
     ],
     'post_init_hook': '_post_init_hook',
 
