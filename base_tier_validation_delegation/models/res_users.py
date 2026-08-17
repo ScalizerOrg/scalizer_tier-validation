@@ -14,6 +14,24 @@ _logger = logging.getLogger(__name__)
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+    @property
+    def SELF_READABLE_FIELDS(self):
+        return super().SELF_READABLE_FIELDS + [
+            "on_holiday",
+            "holiday_start_date",
+            "holiday_end_date",
+            "validation_replacer_id",
+        ]
+
+    @property
+    def SELF_WRITEABLE_FIELDS(self):
+        return super().SELF_WRITEABLE_FIELDS + [
+            "on_holiday",
+            "holiday_start_date",
+            "holiday_end_date",
+            "validation_replacer_id",
+        ]
+
     on_holiday = fields.Boolean(
         help="Check this box if you are out of office and want to delegate your "
         "validation tasks.",

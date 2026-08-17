@@ -5,7 +5,7 @@
 {
     "name": "Base Tier Validation Delegation",
     "summary": "Allows users to delegate tier validation tasks when out of office.",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Tools",
     "website": "https://github.com/OCA/server-ux",
     "author": "360 ERP, Odoo Community Association (OCA)",
