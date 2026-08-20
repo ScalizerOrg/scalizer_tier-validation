@@ -22,14 +22,15 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [account_move_tier_validation](account_move_tier_validation/) | 19.0.1.0.0 |  | Extends the functionality of Account Moves to support a tier validation process.
-[base_tier_validation](base_tier_validation/) | 19.0.1.0.3 | <a href='https://github.com/LoisRForgeFlow'><img src='https://github.com/LoisRForgeFlow.png' width='32' height='32' style='border-radius:50%;' alt='LoisRForgeFlow'/></a> | Implement a validation process based on tiers.
+[base_tier_validation](base_tier_validation/) | 19.0.1.2.1 | <a href='https://github.com/LoisRForgeFlow'><img src='https://github.com/LoisRForgeFlow.png' width='32' height='32' style='border-radius:50%;' alt='LoisRForgeFlow'/></a> | Implement a validation process based on tiers.
 [base_tier_validation_confirm_auth](base_tier_validation_confirm_auth/) | 19.0.1.0.0 |  | Authentication confirmation for base tiers.
 [base_tier_validation_correction](base_tier_validation_correction/) | 19.0.1.0.0 | <a href='https://github.com/kittiu'><img src='https://github.com/kittiu.png' width='32' height='32' style='border-radius:50%;' alt='kittiu'/></a> | Correct tier.review data after it has been created.
-[base_tier_validation_formula](base_tier_validation_formula/) | 19.0.1.0.0 |  | Formulas for Base tier validation
+[base_tier_validation_formula](base_tier_validation_formula/) | 19.0.1.1.0 |  | Formulas for Base tier validation
 [base_tier_validation_forward](base_tier_validation_forward/) | 19.0.1.0.0 | <a href='https://github.com/kittiu'><img src='https://github.com/kittiu.png' width='32' height='32' style='border-radius:50%;' alt='kittiu'/></a> | Forward option for base tiers
 [base_tier_validation_server_action](base_tier_validation_server_action/) | 19.0.1.0.0 | <a href='https://github.com/kittiu'><img src='https://github.com/kittiu.png' width='32' height='32' style='border-radius:50%;' alt='kittiu'/></a> | Add option to call server action when a tier is validated
 [purchase_request_tier_validation](purchase_request_tier_validation/) | 19.0.1.0.0 |  | Extends the functionality of Purchase Requests to support a tier validation process.
 [purchase_tier_validation](purchase_tier_validation/) | 19.0.1.0.0 |  | Extends the functionality of Purchase Orders to support a tier validation process.
+[sale_tier_validation](sale_tier_validation/) | 19.0.1.0.0 |  | Extends the functionality of Sale Orders to support a tier validation process.
 [stock_picking_tier_validation](stock_picking_tier_validation/) | 19.0.1.0.0 |  | Extends the functionality of Transfers to support a tier validation process.
 
 [//]: # (end addons)
