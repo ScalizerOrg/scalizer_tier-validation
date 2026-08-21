@@ -3,14 +3,14 @@
 {
     "name": "Base Tier Validation - Request Actions",
     "summary": "Trigger actions and errors when tier validation is requested",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Tools",
     "website": "https://github.com/OCA/server-ux",
     "author": "ForgeFlow, Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "application": False,
     "installable": True,
-    "depends": ["base_tier_validation"],
+    "depends": ["base_tier_validation", "mail"],
     "data": [
         "views/tier_definition_view.xml",
     ],
