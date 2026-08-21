@@ -4,7 +4,7 @@
 import logging
 
 from odoo import _, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +30,8 @@ class TierValidation(models.AbstractModel):
     def _process_tier_constraint(self, tier_definition):
         """Process tier definition constraint on validation request.
 
-        Raise errors or execute actions based on constraint type.
+        "block" raises (stops the request), "warning" only notifies
+        (the request proceeds), "server_action" runs the configured action.
         """
         self.ensure_one()
 
@@ -51,8 +52,14 @@ class TierValidation(models.AbstractModel):
             )
 
         elif constraint_type == "warning":
-            # Raise UserError - shows warning to user
-            raise UserError(_("%(tier)s: %(message)s", tier=tier_name, message=message))
+            # Non-blocking: post the warning on the record's chatter, but
+            # let the validation request proceed (unlike "block", which
+            # raises and stops it here).
+            full_message = _("%(tier)s: %(message)s", tier=tier_name, message=message)
+            if hasattr(self, "message_post"):
+                self.message_post(body=full_message, message_type="comment")
+            else:
+                _logger.warning(full_message)
 
         elif constraint_type == "server_action":
             # Execute server action
@@ -100,7 +107,8 @@ class TierValidation(models.AbstractModel):
             if rec._check_state_from_condition() and rec.need_validation:
                 tier_definitions = rec._get_applicable_tier_definitions_with_constraints()
                 for tier_def in tier_definitions:
-                    # This will raise an error if constraint type is block/warning
+                    # Raises (and stops here) for "block"; "warning" only
+                    # posts a notice and lets the loop continue.
                     rec._process_tier_constraint(tier_def)
 
         # Call parent to create reviews if no errors were raised

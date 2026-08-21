@@ -1,7 +1,8 @@
 # Copyright 2026 ForgeFlow S.L. (https://www.forgeflow.com)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import ValidationError
+from odoo.tests import new_test_user
 from odoo.tests.common import tagged
 
 from odoo.addons.base_tier_validation.tests.common import CommonTierValidation
@@ -9,39 +10,33 @@ from odoo.addons.base_tier_validation.tests.common import CommonTierValidation
 
 @tagged("post_install", "-at_install")
 class TestTierValidationRequestAction(CommonTierValidation):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.tier_def_obj = cls.env["tier.definition"]
-
-        # Create test users
-        cls.test_user_1 = cls.env["res.users"].create(
-            {
-                "name": "Test User 1",
-                "login": "test_user_1",
-                "email": "test1@test.com",
-            }
+    def setUp(self):
+        super().setUp()
+        # CommonTierValidation.setUp() (called above) already overwrites
+        # self.test_record/self.test_user_1/self.test_user_2 with its own
+        # fixtures - defining ours in setUpClass would be silently shadowed
+        # by those instance attributes on every test. Users must go through
+        # new_test_user (not a plain create) to get base.group_user, needed
+        # to read tier.definition records - without it,
+        # _get_applicable_tier_definitions_with_constraints() silently
+        # returns nothing and no constraint is ever evaluated.
+        self.test_user_1 = new_test_user(
+            self.env, login="constraint_test_user_1", name="Constraint Test User 1"
         )
-        cls.test_user_2 = cls.env["res.users"].create(
-            {
-                "name": "Test User 2",
-                "login": "test_user_2",
-                "email": "test2@test.com",
-            }
+        self.test_user_2 = new_test_user(
+            self.env, login="constraint_test_user_2", name="Constraint Test User 2"
         )
 
-        # Create base tier definition
-        cls.tier_def = cls.tier_def_obj.create(
+        self.tier_def = self.tier_def_obj.create(
             {
-                "model_id": cls.tester_model.id,
+                "model_id": self.tester_model.id,
                 "review_type": "individual",
-                "reviewer_id": cls.test_user_1.id,
+                "reviewer_id": self.test_user_1.id,
                 "definition_domain": "[('test_field', '>', 1.0)]",
             }
         )
 
-        # Create test record
-        cls.test_record = cls.test_model.create({"test_field": 2.5})
+        self.test_record = self.test_model.create({"test_field": 2.5})
 
     def test_01_no_constraint(self):
         """Test validation request without constraint (default behavior)."""
@@ -66,7 +61,7 @@ class TestTierValidationRequestAction(CommonTierValidation):
         self.assertIn("This operation is blocked", str(ctx.exception))
 
     def test_03_warning_constraint(self):
-        """Test warning constraint - raises UserError."""
+        """Test warning constraint - non-blocking, posts a chatter message."""
         self.tier_def.write(
             {
                 "constraint_type": "warning",
@@ -74,11 +69,18 @@ class TestTierValidationRequestAction(CommonTierValidation):
             }
         )
 
-        # Should raise UserError
-        with self.assertRaises(UserError) as ctx:
-            self.test_record.with_user(self.test_user_2.id).request_validation()
+        # Should NOT raise: the validation request must proceed.
+        reviews = self.test_record.with_user(self.test_user_2.id).request_validation()
+        self.assertTrue(reviews)
+        self.assertEqual(len(reviews), 1)
 
-        self.assertIn("Warning: please review", str(ctx.exception))
+        # The warning must be traceable on the record's chatter.
+        self.assertTrue(
+            any(
+                "Warning: please review" in (msg.body or "")
+                for msg in self.test_record.message_ids
+            )
+        )
 
     def test_04_server_action_constraint(self):
         """Test server action constraint."""

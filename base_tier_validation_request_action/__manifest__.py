@@ -10,7 +10,7 @@
     "license": "AGPL-3",
     "application": False,
     "installable": True,
-    "depends": ["base_tier_validation"],
+    "depends": ["base_tier_validation", "mail"],
     "data": [
         "views/tier_definition_view.xml",
     ],

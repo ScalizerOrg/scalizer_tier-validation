@@ -12,7 +12,7 @@ class TierDefinition(models.Model):
         [
             ("none", "No Constraint"),
             ("block", "Block (ValidationError)"),
-            ("warning", "Warning (UserError)"),
+            ("warning", "Warning (non-blocking)"),
             ("server_action", "Execute Server Action"),
         ],
         string="Constraint Type",
@@ -20,7 +20,8 @@ class TierDefinition(models.Model):
         help="Action to trigger when validation is requested:\n"
         "- No Constraint: Do nothing (default behavior)\n"
         "- Block: Raise ValidationError and prevent validation request\n"
-        "- Warning: Raise UserError with warning message\n"
+        "- Warning: Post a non-blocking warning message on the record's "
+        "chatter and let the validation request proceed\n"
         "- Execute Server Action: Run a server action",
     )
 
