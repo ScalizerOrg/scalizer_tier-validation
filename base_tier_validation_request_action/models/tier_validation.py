@@ -52,14 +52,19 @@ class TierValidation(models.AbstractModel):
             )
 
         elif constraint_type == "warning":
-            # Non-blocking: post the warning on the record's chatter, but
-            # let the validation request proceed (unlike "block", which
-            # raises and stops it here).
+            # Non-blocking: push a sticky notification to the requesting
+            # user via the bus, but let the validation request proceed
+            # (unlike "block", which raises and stops it here).
             full_message = _("%(tier)s: %(message)s", tier=tier_name, message=message)
-            if hasattr(self, "message_post"):
-                self.message_post(body=full_message, message_type="comment")
-            else:
-                _logger.warning(full_message)
+            self.env.user._bus_send(
+                "simple_notification",
+                {
+                    "type": "warning",
+                    "title": tier_name,
+                    "message": full_message,
+                    "sticky": True,
+                },
+            )
 
         elif constraint_type == "server_action":
             # Execute server action
