@@ -1,6 +1,8 @@
 # Copyright 2026 ForgeFlow S.L. (https://www.forgeflow.com)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from unittest.mock import patch
+
 from odoo.exceptions import ValidationError
 from odoo.tests import new_test_user
 from odoo.tests.common import tagged
@@ -61,7 +63,7 @@ class TestTierValidationRequestAction(CommonTierValidation):
         self.assertIn("This operation is blocked", str(ctx.exception))
 
     def test_03_warning_constraint(self):
-        """Test warning constraint - non-blocking, posts a chatter message."""
+        """Test warning constraint - non-blocking, pushes a bus notification."""
         self.tier_def.write(
             {
                 "constraint_type": "warning",
@@ -70,16 +72,27 @@ class TestTierValidationRequestAction(CommonTierValidation):
         )
 
         # Should NOT raise: the validation request must proceed.
-        reviews = self.test_record.with_user(self.test_user_2.id).request_validation()
+        with patch(
+            "odoo.addons.bus.models.bus_listener_mixin.BusListenerMixin._bus_send"
+        ) as bus_send_mock:
+            reviews = self.test_record.with_user(
+                self.test_user_2.id
+            ).request_validation()
         self.assertTrue(reviews)
         self.assertEqual(len(reviews), 1)
 
-        # The warning must be traceable on the record's chatter.
-        self.assertTrue(
-            any(
-                "Warning: please review" in (msg.body or "")
-                for msg in self.test_record.message_ids
-            )
+        # The warning must be pushed as a sticky bus notification, not a
+        # chatter message.
+        bus_send_mock.assert_called_once_with(
+            "simple_notification",
+            {
+                "type": "warning",
+                "title": self.tier_def.name,
+                "message": (
+                    f"{self.tier_def.name}: Warning: please review this carefully"
+                ),
+                "sticky": True,
+            },
         )
 
     def test_04_server_action_constraint(self):
