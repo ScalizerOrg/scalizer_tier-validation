@@ -13,33 +13,32 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestTierValidationDelegation(CommonTierValidation):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.user_delegator = cls.test_user_1
-        cls.user_replacer_b = cls.env["res.users"].create(
+    def setUp(self):
+        super().setUp()
+        self.user_delegator = self.test_user_1
+        self.user_replacer_b = self.env["res.users"].create(
             {"name": "User B (Replacer)", "login": "user_b", "email": "b@test.com"}
         )
-        cls.user_replacer_c = cls.env["res.users"].create(
+        self.user_replacer_c = self.env["res.users"].create(
             {"name": "User C (Final)", "login": "user_c", "email": "c@test.com"}
         )
-        cls.admin_user = cls.env["res.users"].create(
+        self.admin_user = self.env["res.users"].create(
             {"name": "Delegation Admin", "login": "deleg_admin", "email": "da@test.com"}
         )
-        cls.delegation_admin_group = cls.env.ref(
+        self.delegation_admin_group = self.env.ref(
             "base_tier_validation_delegation.group_delegation_administrator"
         )
-        cls.admin_user.write({"group_ids": [(4, cls.delegation_admin_group.id)]})
+        self.admin_user.write({"group_ids": [(4, self.delegation_admin_group.id)]})
 
-        cls.test_group = cls.env["res.groups"].create({"name": "Test Review Group"})
-        cls.test_user_1.write({"group_ids": [(4, cls.test_group.id)]})
-        cls.test_user_2.write({"group_ids": [(4, cls.test_group.id)]})
-        cls.tier_def = cls.env["tier.definition"].create(
+        self.test_group = self.env["res.groups"].create({"name": "Test Review Group"})
+        self.test_user_1.write({"group_ids": [(4, self.test_group.id)]})
+        self.test_user_2.write({"group_ids": [(4, self.test_group.id)]})
+        self.tier_def = self.env["tier.definition"].create(
             {
-                "model_id": cls.tester_model.id,
+                "model_id": self.tester_model.id,
                 "approve_sequence": False,
                 "review_type": "individual",
-                "reviewer_id": cls.user_delegator.id,
+                "reviewer_id": self.user_delegator.id,
                 "definition_domain": "[('test_field', '>', 1.0)]",
             }
         )
@@ -269,6 +268,62 @@ class TestTierValidationDelegation(CommonTierValidation):
             self.user_replacer_b.write(
                 {
                     "on_holiday": True,
+                    "validation_replacer_id": self.user_delegator.id,
+                }
+            )
+
+    def test_14b_circular_delegation_not_blocked_if_other_not_on_holiday(self):
+        """No error when the mutual replacer has not set on_holiday/dates."""
+        self.user_delegator.write(
+            {"validation_replacer_id": self.user_replacer_b.id}
+        )
+        self.user_replacer_b.write(
+            {
+                "on_holiday": True,
+                "holiday_start_date": date.today(),
+                "holiday_end_date": date.today() + timedelta(days=5),
+                "validation_replacer_id": self.user_delegator.id,
+            }
+        )
+
+    def test_14c_circular_delegation_not_blocked_if_dates_do_not_overlap(self):
+        """No error when both are mutual replacers but holiday periods don't overlap."""
+        self.user_delegator.write(
+            {
+                "on_holiday": True,
+                "holiday_start_date": date.today(),
+                "holiday_end_date": date.today() + timedelta(days=5),
+                "validation_replacer_id": self.user_replacer_b.id,
+            }
+        )
+        self.user_replacer_b.write(
+            {
+                "on_holiday": True,
+                "holiday_start_date": date.today() + timedelta(days=10),
+                "holiday_end_date": date.today() + timedelta(days=15),
+                "validation_replacer_id": self.user_delegator.id,
+            }
+        )
+
+    def test_14d_circular_delegation_blocked_if_dates_overlap(self):
+        """Error is raised when both are mutual replacers with overlapping periods."""
+        self.user_delegator.write(
+            {
+                "on_holiday": True,
+                "holiday_start_date": date.today(),
+                "holiday_end_date": date.today() + timedelta(days=10),
+                "validation_replacer_id": self.user_replacer_b.id,
+            }
+        )
+        with self.assertRaises(
+            ValidationError,
+            msg="Should not allow a mutual delegation loop with overlapping dates.",
+        ):
+            self.user_replacer_b.write(
+                {
+                    "on_holiday": True,
+                    "holiday_start_date": date.today() + timedelta(days=5),
+                    "holiday_end_date": date.today() + timedelta(days=15),
                     "validation_replacer_id": self.user_delegator.id,
                 }
             )

@@ -58,6 +58,18 @@ class ResUsers(models.Model):
                     _("Holiday End Date cannot be before the Start Date.")
                 )
 
+    def _holiday_dates_overlap(self, other):
+        """Check if self and other have at least one holiday day in common."""
+        self.ensure_one()
+        other.ensure_one()
+        if self.holiday_start_date and other.holiday_end_date:
+            if self.holiday_start_date > other.holiday_end_date:
+                return False
+        if self.holiday_end_date and other.holiday_start_date:
+            if self.holiday_end_date < other.holiday_start_date:
+                return False
+        return True
+
     @api.constrains("on_holiday", "validation_replacer_id")
     def _check_validation_replacer(self):
         """Ensures a user does not delegate to themselves or create a circular loop."""
@@ -68,15 +80,25 @@ class ResUsers(models.Model):
                 raise ValidationError(
                     _("You cannot delegate validation tasks to yourself.")
                 )
-            # Check for circular delegation (e.g., A->B->C->A)
+            # Check for circular delegation (e.g., A->B->C->A), only when the
+            # users closing the loop are mutually on holiday with overlapping
+            # date ranges.
             next_replacer = user.validation_replacer_id
             path = {user}
+            previous = user
             while next_replacer:
                 if next_replacer in path:
-                    raise ValidationError(
-                        _("You cannot create a circular delegation path.")
-                    )
+                    if (
+                        previous.on_holiday
+                        and next_replacer.on_holiday
+                        and previous._holiday_dates_overlap(next_replacer)
+                    ):
+                        raise ValidationError(
+                            _("You cannot create a circular delegation path.")
+                        )
+                    break
                 path.add(next_replacer)
+                previous = next_replacer
                 next_replacer = next_replacer.validation_replacer_id
 
     def _is_currently_on_holiday(self, today=None):
