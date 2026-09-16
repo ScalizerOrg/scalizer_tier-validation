@@ -7,7 +7,16 @@ import {
 import {patch} from "@web/core/utils/patch";
 
 reviewsTableComponent.relatedFields.push(
-    {name: "constraint_type", type: "selection"},
+    {
+        name: "constraint_type",
+        type: "selection",
+        selection: [
+            ["none", "No Constraint"],
+            ["block", "Block (ValidationError)"],
+            ["warning", "Warning (non-blocking)"],
+            ["server_action", "Execute Server Action"],
+        ],
+    },
     {name: "constraint_message", type: "text"}
 );
 
