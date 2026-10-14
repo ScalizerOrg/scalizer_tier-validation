@@ -61,6 +61,7 @@ class AccountMove(models.Model):
         'validation_status',
         'payment_state',
         'is_intragroup_invoice',
+        'reversed_entry_id',
         'invoice_payment_review_state_manual',
     )
     def _compute_invoice_payment_review_state(self):
@@ -71,7 +72,7 @@ class AccountMove(models.Model):
         - AUTO state follows tier validation status.
         - Keeps previous value in draft or after payment to preserve history.
         - If validation is not required:
-            intragroup => not_required, otherwise => False.
+            intragroup or reversal => not_required, otherwise => False.
         - Manual override always takes priority.
         """
         status_map = {
@@ -91,7 +92,7 @@ class AccountMove(models.Model):
             elif move.state == 'draft' and move.invoice_payment_review_state:
                 auto_val = move.invoice_payment_review_state
             elif not move._payment_validation_required():
-                if move.is_intragroup_invoice:
+                if move.is_intragroup_invoice or move.reversed_entry_id:
                     auto_val = 'not_required'
                 else:
                     auto_val = False
@@ -207,7 +208,11 @@ class AccountMove(models.Model):
 
     def _payment_validation_required(self):
         self.ensure_one()
-        if self.is_intragroup_invoice or not self._is_vendor_bill_posted():
+        if (
+            self.is_intragroup_invoice
+            or self.reversed_entry_id
+            or not self._is_vendor_bill_posted()
+        ):
             return False
         tiers = self.env['tier.definition'].with_context(active_test=True).search([
             ('model', '=', self._name),
