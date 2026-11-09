@@ -22,8 +22,9 @@ class ResPartner(models.Model):
         Other can be added extending this method.
         """
         # IDEA: make it a System Parameter?
+        # [MIG]: company_type removed in 20.0; is_company is now computed
+        # from vat and parent_id, both already listed below
         return [
-            "company_type",
             "parent_id",
             "vat",
             "state_id",

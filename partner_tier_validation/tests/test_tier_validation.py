@@ -59,7 +59,8 @@ class TestPartnerTierValidation(common.TransactionCase):
         Case where new Contact requires validation
         """
         Partner = self.env["res.partner"]
-        contact_vals = {"name": "Company for test", "company_type": "company"}
+        # [MIG]: is_company is computed from vat in 20.0 (company_type removed)
+        contact_vals = {"name": "Company for test", "vat": "BE0477472701"}
         contact = Partner.with_user(self.user_employee).create(contact_vals)
         self.assertEqual(contact.state, "draft")
 
@@ -77,7 +78,7 @@ class TestPartnerTierValidation(common.TransactionCase):
         self.assertEqual(contact.state, "confirmed")
 
         # Change company type to retrigger validation
-        contact.write({"company_type": "person"})
+        contact.write({"vat": False})
         self.assertEqual(
             contact.state, "draft", "Change company type sets back to draft"
         )
@@ -87,7 +88,7 @@ class TestPartnerTierValidation(common.TransactionCase):
         Case where new Contact does not require validation
         """
         Partner = self.env["res.partner"]
-        contact_vals = {"name": "Company for test", "company_type": "person"}
+        contact_vals = {"name": "Company for test"}
         contact = Partner.with_user(self.user_employee).create(contact_vals)
         self.assertEqual(contact.state, "draft")
         # Can move to confirmed state without approval
