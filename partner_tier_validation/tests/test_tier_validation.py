@@ -62,7 +62,7 @@ class TestPartnerTierValidation(common.TransactionCase):
         # [MIG]: is_company is computed from vat in 20.0 (company_type removed)
         contact_vals = {"name": "Company for test", "vat": "BE0477472701"}
         contact = Partner.with_user(self.user_employee).create(contact_vals)
-        self.assertEqual(contact.state, "draft")
+        self.assertEqual(contact.stage_state, "draft")
 
         # Assert an error shows if trying to make it active
         with self.assertRaises(ValidationError):
@@ -75,12 +75,12 @@ class TestPartnerTierValidation(common.TransactionCase):
         contact.with_user(self.user_approver).write(
             {"stage_id": self.stage_confirmed.id}
         )
-        self.assertEqual(contact.state, "confirmed")
+        self.assertEqual(contact.stage_state, "confirmed")
 
         # Change company type to retrigger validation
         contact.write({"vat": False})
         self.assertEqual(
-            contact.state, "draft", "Change company type sets back to draft"
+            contact.stage_state, "draft", "Change company type sets back to draft"
         )
 
     def test_no_validation_res_partner(self):
@@ -90,7 +90,7 @@ class TestPartnerTierValidation(common.TransactionCase):
         Partner = self.env["res.partner"]
         contact_vals = {"name": "Company for test"}
         contact = Partner.with_user(self.user_employee).create(contact_vals)
-        self.assertEqual(contact.state, "draft")
+        self.assertEqual(contact.stage_state, "draft")
         # Can move to confirmed state without approval
         contact.write({"stage_id": self.stage_confirmed.id})
-        self.assertEqual(contact.state, "confirmed")
+        self.assertEqual(contact.stage_state, "confirmed")
