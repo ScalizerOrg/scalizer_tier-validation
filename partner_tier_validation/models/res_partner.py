@@ -39,7 +39,7 @@ class ResPartner(models.Model):
     def write(self, vals):
         # Changing certain fields requires a new validation process
         revalidate_fields = self._partner_tier_revalidation_fields(vals)
-        if any(x in revalidate_fields for x in vals.keys()):
+        if any(x in revalidate_fields for x in vals):
             vals["stage_id"] = self._get_default_stage_id().id
         # Tier Validation does not work with Stages, only States :-(
         # Workaround is to signal state transition adding it to the write values

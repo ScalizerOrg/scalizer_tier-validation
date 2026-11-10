@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <!-- Copyright 2019 Open Source Integrators
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
@@ -7,9 +8,8 @@
         <field name="inherit_id" ref="base.view_partner_form" />
         <field name="arch" type="xml">
             <field name="stage_id" position="before">
-                 <field name="stage_state" invisible="1" />
+                <field name="stage_state" invisible="1" />
                 <!-- Tier Validation UI needs the state field to be in the form -->
-
             </field>
         </field>
     </record>

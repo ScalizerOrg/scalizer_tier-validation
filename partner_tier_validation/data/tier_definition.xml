@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo noupdate="1">
     <record id="partner_tier_definition_company_only" model="tier.definition">
         <field name="name">Validate New Company</field>
